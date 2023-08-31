@@ -28,7 +28,7 @@ from typing import Iterable, Tuple, Union
 
 import torch
 from omegaconf import DictConfig, OmegaConf
-from pytorch_lightning.callbacks import LearningRateMonitor
+from lightning.pytorch.callbacks import LearningRateMonitor
 
 from .callbacks import CheckpointEveryNSteps
 
@@ -79,8 +79,8 @@ except ImportError:
     raise ValueError(LIBROSA_IMPORT_ERROR)
 
 try:
-    import pytorch_lightning as pl
-    from pytorch_lightning.loggers import LightningLoggerBase, TensorBoardLogger, WandbLogger
+    import lightning.pytorch as pl
+    from lightning.pytorch.loggers import logger, tensorboard, wandb
 except ImportError:
     raise ValueError(PYTORCH_LIGHTNING_IMPORT_ERROR)
 
@@ -195,7 +195,7 @@ def _check_environment(use_cuda: bool, logger) -> int:
     return num_devices
 
 
-def parse_configs(configs: DictConfig) -> Tuple[Union[TensorBoardLogger, bool], int]:
+def parse_configs(configs: DictConfig) -> Tuple[Union[tensorboard, bool], int]:
     r"""
     Parsing configuration set.
 
@@ -203,7 +203,7 @@ def parse_configs(configs: DictConfig) -> Tuple[Union[TensorBoardLogger, bool], 
         configs (DictConfig): configuration set.
 
     Returns:
-        logger (Union[TensorBoardLogger, bool]): logger for training
+        logger (Union[tensorboard, bool]): logger for training
         num_devices (int): the number of cuda device
     """
     logger = logging.getLogger(__name__)
@@ -211,9 +211,9 @@ def parse_configs(configs: DictConfig) -> Tuple[Union[TensorBoardLogger, bool], 
     num_devices = _check_environment(configs.trainer.use_cuda, logger)
 
     if configs.trainer.logger == "tensorboard":
-        logger = TensorBoardLogger("logs/")
+        logger = tensorboard("logs/")
     elif configs.trainer.logger == "wandb":
-        logger = WandbLogger(
+        logger = wandb(
             project=f"{configs.model.model_name}-{configs.dataset.dataset}",
             name=f"{configs.model.model_name}-{configs.dataset.dataset}",
             job_type="train",
@@ -225,7 +225,7 @@ def parse_configs(configs: DictConfig) -> Tuple[Union[TensorBoardLogger, bool], 
 
 
 def get_pl_trainer(
-    configs: DictConfig, num_devices: int, logger: Union[LightningLoggerBase, Iterable[LightningLoggerBase], bool]
+    configs: DictConfig, num_devices: int, logger: Union[logger, Iterable[logger], bool]
 ) -> pl.Trainer:
     amp_backend = None
 
